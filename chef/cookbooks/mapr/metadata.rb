@@ -1,3 +1,4 @@
+name			 "MapR"
 maintainer       "MapR Technologies"
 maintainer_email "banderson@maprtech.com"
 license          "Apache 2.0"
