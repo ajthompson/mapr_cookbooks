@@ -76,8 +76,8 @@ def copy_chef_bits():
     put("../chef/solo.rb", CHEF_DIR)
     # for dev
     if os.path.isfile("../DEV"):
-        local("cd ../chef/cookbooks/mapr && berks install "
-              "--path ../../dep_cookbooks")
+        local("cd ../chef/cookbooks/mapr && berks vendor "
+              "../../dep_cookbooks")
         put("../chef/dep_cookbooks/*", COOKBOOK_DIR)
 
 def download_mapr_packages():
