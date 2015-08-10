@@ -54,7 +54,7 @@ def auth():
         env.user = auth["user"]
 
 def install_omnibus_chef():
-	sudo("curl -L https://www.opscode.com/chef/install.sh | bash -s -- -v 12.3.0")
+	sudo("curl -L https://www.opscode.com/chef/install.sh | bash")
 
 def keygen():
     local("ssh-keygen -t rsa -P '' -f ~/.ssh/mapr_rsa")
