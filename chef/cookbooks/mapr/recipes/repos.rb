@@ -13,10 +13,12 @@ if platform_family?("rhel")
 
   yum_repository "mapr_core" do
     url "#{node['mapr']['repo_url']}/#{version}/redhat"
+	gpgkey "#{node['mapr']['repo_key_url']}"
   end
 
   yum_repository "mapr_ecosystem" do
     url "#{node['mapr']['repo_url']}/ecosystem/redhat"
+	gpgkey "#{node['mapr']['repo_key_url']}"
   end
 
 end

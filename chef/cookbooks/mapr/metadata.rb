@@ -14,5 +14,7 @@ depends 'hostsfile'
 depends 'hostname'
 depends 'apt'
 depends 'yum'
+depends 'yum-epel'
 depends 'iptables'
 depends 'java'
+

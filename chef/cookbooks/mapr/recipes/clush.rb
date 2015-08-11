@@ -21,7 +21,7 @@ def get_nodes_with_role_sp(role)
 end
 
 if platform_family?("rhel")
-  include_recipe "yum::epel"
+  include_recipe "yum-epel"
 end
 
 package "clustershell"
