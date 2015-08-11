@@ -18,11 +18,34 @@ Copy the tarball somewhere, and expand it.
 
 ###Edit
 
-In the packaged folder (from the tarball above), edit cluster.json to suit your cluster.
+In the packaged folder (from the tarball above), edit cluster.json.example to suit your cluster, and rename it to cluster.json.
 
 ###Execute
 
     ./install
+
+###Manual Steps
+
+These steps currently need to be completed manually after running the install script:
+
+1. Before starting services, issue ```sudo passwd mapr```
+2. Start Zookeepers on all nodes ```sudo /etc/init.d/mapr-zookeeper start```
+3. Start Warden on all nodes ```sudo /etc/init.d/mapr-warden start```
+4. Set MapR user ```/opt/mapr/bin/maprcli acl edit -type cluster -user <user>:fc```
+5. Hit ```https://<webserver-node-hostname>:8443/``` and get on with Hadooping
+
+Finally, if MapR 3.1, 3.1.1, 4.0.0, or 4.0.1 was installed, a patch must be applied to fix an SSL certificate bug and allow the webserver to be accessible.
+(http://doc.mapr.com/display/RelNotes/MapR+Control+System+Certificate+Issue)
+
+1. Determine which nodes in the cluster run the webserver role.
+
+    maprcli node list -columns configuredservice -filter '[configuredservice==webserver]'
+
+2. Perform the following steps on each webserver node: 
+
+    wget http://package.mapr.com/scripts/mcs/fixssl
+    chmod 755 fixssl
+    sudo ./fixssl
 
 ## TODO
 
