@@ -39,13 +39,13 @@ Finally, if MapR 3.1, 3.1.1, 4.0.0, or 4.0.1 was installed, a patch must be appl
 
 1. Determine which nodes in the cluster run the webserver role.
 
-    maprcli node list -columns configuredservice -filter '[configuredservice==webserver]'
+    ```maprcli node list -columns configuredservice -filter '[configuredservice==webserver]'```
 
 2. Perform the following steps on each webserver node: 
 
-    wget http://package.mapr.com/scripts/mcs/fixssl
-    chmod 755 fixssl
-    sudo ./fixssl
+    ```wget http://package.mapr.com/scripts/mcs/fixssl```
+    ```chmod 755 fixssl```
+    ```sudo ./fixssl```
 
 ## TODO
 
