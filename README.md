@@ -44,7 +44,9 @@ Finally, if MapR 3.1, 3.1.1, 4.0.0, or 4.0.1 was installed, a patch must be appl
 2. Perform the following steps on each webserver node: 
 
     ```wget http://package.mapr.com/scripts/mcs/fixssl```
+
     ```chmod 755 fixssl```
+    
     ```sudo ./fixssl```
 
 ## TODO
