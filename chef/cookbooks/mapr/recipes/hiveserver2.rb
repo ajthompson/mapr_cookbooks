@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: mapr
-# Recipe:: hive
+# Recipe:: hiveserver2
 #
 # Copyright 2013, MapR Technologies
 #
@@ -20,7 +20,7 @@ if platform_family?("rhel")
   end
 end
 
-package "mapr-hive"
+package "mapr-hiveserver2"
 
 # Reenable the check
 if platform_family?("rhel")
