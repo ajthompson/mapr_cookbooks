@@ -41,13 +41,14 @@ Finally, if MapR 3.1, 3.1.1, 4.0.0, or 4.0.1 was installed, a patch must be appl
 
     ```maprcli node list -columns configuredservice -filter '[configuredservice==webserver]'```
 
-2. Perform the following steps on each webserver node: 
+2. Perform the following command on each webserver node, after mapr-warden has been started: 
 
-    ```wget http://package.mapr.com/scripts/mcs/fixssl```
+    ```
+    wget http://package.mapr.com/scripts/mcs/fixssl; 
+    chmod 755 fixssl; 
+    sudo ./fixssl
+    ```
 
-    ```chmod 755 fixssl```
-    
-    ```sudo ./fixssl```
 
 ## TODO
 
