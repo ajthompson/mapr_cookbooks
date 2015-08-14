@@ -1,0 +1,168 @@
+#!/bin/bash
+
+usage="Usage: webserver (start|stop)"
+
+if [ $# -le 0 ]; then
+  echo $usage
+  exit 1
+fi
+
+source /opt/mapr/conf.new/env.sh
+
+# Used by PAM module, to avoid recursive call
+export MAPR_SKIP_TICKET_GEN=1
+# Used for impersonation
+export MAPR_IMPERSONATION_ENABLED=1
+
+# Get arguments
+startStop=$1
+
+# Variables
+_bin=`dirname "$0"`
+_bin=`cd "${_bin}"; pwd`
+
+ADMIN_HOME=`cd ${_bin} ; cd .. ; pwd`
+env=${ADMIN_HOME}/conf/env.sh
+[ -f $env ] && . $env
+
+if [ ! -z $JAVA_HOME ]; then
+ export PATH=$JAVA_HOME/bin:$PATH
+fi
+
+ADMIN_LOG_DIR=${ADMIN_HOME}/logs
+ADMIN_PID_DIR=${ADMIN_HOME}/pid
+ADMIN_OPTS="-Dmapr.library.flatclass -Dcom.sun.management.jmxremote"
+ADMIN_CLASSPATH="${ADMIN_HOME}:${ADMIN_HOME}/build:${ADMIN_HOME}/conf:${ADMIN_HOME}/adminuiapp"
+for i in ${ADMIN_HOME}/lib/*.jar; do
+  ADMIN_CLASSPATH=${ADMIN_CLASSPATH}:$i;
+done
+
+ADMIN_CLASSPATH=${ADMIN_CLASSPATH}:$(/usr/bin/hadoop classpath)
+
+# webdefault.xml
+ADMIN_CLASSPATH="${ADMIN_CLASSPATH}:${ADMIN_HOME}/conf/webdefault.xml"
+
+#hibernate.cfg.xml
+ADMIN_CLASSPATH="${ADMIN_CLASSPATH}:${ADMIN_HOME}/conf/hibernate.cfg.xml"
+ADMIN_CLASSPATH="${ADMIN_CLASSPATH}:${ADMIN_HOME}/adminuiapp/webapp/resources"
+
+ADMIN_TEST_JAR=${ADMIN_HOME}/build/adminuiapp-0.1-test.jar
+adminConf=${ADMIN_HOME}/conf/web.conf
+if [ $# == 2 ]; then
+  adminConf=$2
+fi
+echo $adminConfFile
+
+ADMIN_SUPPORT_OPTS="-XX:ErrorFile=${ADMIN_LOG_DIR}/hs_err_pid%p.log"
+
+# java.library.path for rpc in c++
+ADMIN_JAVA_LIBRARY_PATH="${ADMIN_HOME}/lib:${ADMIN_HOME}/../../libs"
+HADOOP_LIB_PATH=$(/usr/bin/hadoop jnipath)
+ADMIN_JAVA_LIBRARY_PATH="${ADMIN_JAVA_LIBRARY_PATH}:${HADOOP_LIB_PATH}"
+
+# TODO : do the packaing right, instead of the above scheme
+
+#echo ${ADMIN_CLASSPATH}
+
+command="adminuiapp server"
+log=${ADMIN_LOG_DIR}/adminuiapp.log
+pid=${ADMIN_PID_DIR}/adminuiapp.pid
+
+ADMIN_OPTS="${ADMIN_OPTS} -Dpid=$$ -Dpname=webserver -Dmapr.home.dir=${ADMIN_HOME}"
+ADMIN_OPTS="${ADMIN_OPTS} ${ADMIN_SUPPORT_OPTS}"
+ADMIN_OPTS="${ADMIN_OPTS} ${MAPR_SSL_OPTS}"
+
+rotate_log()
+{
+    log=$1;
+    num=10;
+    if [ -n "$2" ]; then
+      num=$2
+    fi
+    if [ -f "$log" ]; then # rotate logs
+      while [ $num -gt 1 ]; do
+       prev=`expr $num - 1`
+       [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
+       num=$prev
+      done
+      mv "$log" "$log.$num";
+    fi
+}
+
+JAVA_HEAP_MAX=""
+# check envvars which might override default args
+if [ "$WEBSERVER_HEAPSIZE"x != "x" ]; then
+  JAVA_HEAP_MAX="-Xmx""$WEBSERVER_HEAPSIZE""m"
+fi
+
+#get login configuration from values set in env.sh
+LOGIN_CONFIG=${MAPR_LOGIN_OPTS}
+
+case $startStop in
+  (start)
+    mkdir -p "${ADMIN_PID_DIR}"
+    if [ -f $pid ]; then
+      if kill -0 `cat $pid` > /dev/null 2>&1; then
+        # checkif it is really warden or some other process
+        WPID=$(cat $pid)
+        if cat /proc/$WPID/cmdline | grep CommandServer > /dev/null 2>&1; then
+          echo $command running as process `cat $pid`. Stop it
+          exit 0
+        fi
+      fi
+    fi
+. ${ADMIN_HOME}/server/initscripts-common.sh
+  JAVA=$(CheckForJava)
+  if [ $? != 0 ]; then
+     echo $JAVA
+     exit 1
+  fi
+
+  DBJAR="/usr/share/java/mysql-connector-java.jar"
+  if [ -f "${ADMIN_HOME}/roles/jmrole" ]; then
+    if [ ! -f $DBJAR ]; then
+      echo "WARN: $DBJAR is not found. Please install it."
+    else
+      ADMIN_CLASSPATH="${ADMIN_CLASSPATH}:${DBJAR}"
+    fi
+  fi
+    rotate_log $log
+    nohup $JAVA ${JAVA_HEAP_MAX} -Dlog.file=${log} \
+      -Djava.library.path=${ADMIN_JAVA_LIBRARY_PATH} ${LOGIN_CONFIG} -classpath \
+      ${ADMIN_CLASSPATH} ${ADMIN_OPTS} \
+      com.mapr.adminuiapp.CommandServer ${adminConf} > "${log}" 2>&1 < /dev/null &
+    echo $! > $pid
+    sleep 1
+  if kill -0 `cat $pid` > /dev/null 2>&1; then
+      echo "Starting $command, logging to $log"
+  else
+    echo "Error: webserver can not be started. See ${log} for details"
+    exit 1
+  fi
+    ;;
+
+   (stop)
+     if [ -f $pid ]; then
+      if kill -0 `cat $pid` > /dev/null 2>&1; then
+        echo stopping $command
+        kill `cat $pid`
+      else
+        echo no $command to stop
+      fi
+    else
+      echo no $command to stop
+    fi
+    ;;
+   (status)
+     if [ -f $pid ]; then
+      if kill -0 `cat $pid` > /dev/null 2>&1; then
+      echo $command running as process `cat $pid`.
+      exit 0
+    fi
+      echo $pid exists with pid `cat $pid` but no $command.
+      exit 1
+    fi
+  echo $command not running.
+  exit 1
+  ;;
+esac

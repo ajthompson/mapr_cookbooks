@@ -5,7 +5,8 @@ run_list(
   "role[mapr_zookeeper]",
   "role[mapr_fileserver]",
   "role[mapr_jobtracker]",
-  "role[mapr_webserver]"
+  "role[mapr_webserver]",
+  "role[mapr_hiveserver]"
 )
 default_attributes(
 
